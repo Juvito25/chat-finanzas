@@ -1,0 +1,795 @@
+{
+  "name": "chat-finanzas",
+  "nodes": [
+    {
+      "parameters": {
+        "httpMethod": "POST",
+        "path": "d42fd8ae-9ea1-4f04-9224-9b6b0cc5bd36",
+        "options": {}
+      },
+      "type": "n8n-nodes-base.webhook",
+      "typeVersion": 2.1,
+      "position": [
+        -784,
+        -544
+      ],
+      "id": "72c3e046-1dda-4789-89d3-c74ad5d8f0f6",
+      "name": "Webhook",
+      "webhookId": "d42fd8ae-9ea1-4f04-9224-9b6b0cc5bd36"
+    },
+    {
+      "parameters": {
+        "promptType": "define",
+        "text": "={{ $json.input }}",
+        "options": {
+          "systemMessage": "Sos un asistente financiero proactivo y experto llamado \"Tu Bolsillo\", argentino con muy buen nivel educativo, pero con palabras típicas. Tu objetivo principal es ayudar al usuario a registrar y consultar sus movimientos financieros utilizando las herramientas disponibles.\n\n**Reglas de Comportamiento Clave:**\n\n1.  **Infiere la Intención:** Si el usuario describe un gasto o un ingreso que acaba de realizar (ej: \"acabo de comprar café por 500\"), asume que quiere registrarlo y utiliza la herramienta apropiada ('agregar_gasto' o 'agregar_ingreso').\n2.  **Actúa Directamente:** No confirmes antes de registrar un movimiento. Simplemente ejecútalo.\n3.  **Pide Clarificación:** Si falta información crucial para usar una herramienta (como el monto al agregar un gasto), pídesela amablemente al usuario.\n4.  **Usa las Herramientas:** Prioriza siempre el uso de tus herramientas sobre dar respuestas genéricas. Tu función es ser un gestor de datos.\n5. **Devuelve datos agrupados:** Si el usuario pide \"gastos por cilente\", \"ingresos de este mes\", etc.\n**6. No Inventes Resultados:** NUNCA confirmes que una acción (como agregar o consultar datos) se ha completado si no has usado una herramienta para hacerlo. Tu respuesta SIEMPRE debe basarse en la salida real de la herramienta que ejecutaste. Si no estás seguro de qué herramienta usar, pide clarificación."
+        }
+      },
+      "type": "@n8n/n8n-nodes-langchain.agent",
+      "typeVersion": 2.2,
+      "position": [
+        1024,
+        -544
+      ],
+      "id": "2ebab5ed-d0c9-4bcd-86c8-024e5fef7e37",
+      "name": "AI Agent",
+      "alwaysOutputData": false
+    },
+    {
+      "parameters": {
+        "options": {}
+      },
+      "type": "@n8n/n8n-nodes-langchain.lmChatGoogleGemini",
+      "typeVersion": 1,
+      "position": [
+        784,
+        -320
+      ],
+      "id": "f3075f05-6736-4631-852d-1fadd7fc9701",
+      "name": "Google Gemini Chat Model",
+      "credentials": {
+        "googlePalmApi": {
+          "id": "V50ALFehl4xoaSoO",
+          "name": "Google Gemini(PaLM) Api account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "sessionIdType": "customKey",
+        "sessionKey": "={{ $('si_es_texto').item.json.sender }}",
+        "contextWindowLength": 15
+      },
+      "type": "@n8n/n8n-nodes-langchain.memoryPostgresChat",
+      "typeVersion": 1.3,
+      "position": [
+        912,
+        -320
+      ],
+      "id": "1b3c9792-3797-49fc-9af1-86dc89cc5f6a",
+      "name": "Postgres Chat Memory",
+      "credentials": {
+        "postgres": {
+          "id": "Ujiu4OQYHzmjFazT",
+          "name": "Postgres account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "assignments": {
+          "assignments": [
+            {
+              "id": "a70d696f-ed32-47c0-809f-0d33709c872c",
+              "name": "final_message",
+              "value": "={{ $json.message.conversation }}",
+              "type": "string"
+            }
+          ]
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.set",
+      "typeVersion": 3.4,
+      "position": [
+        336,
+        -640
+      ],
+      "id": "7d0be333-edd9-48e1-a42c-192640880b69",
+      "name": "final_message_txt"
+    },
+    {
+      "parameters": {
+        "assignments": {
+          "assignments": [
+            {
+              "id": "f8f47c6f-ec6b-4ea1-ba86-719df0d2b6bc",
+              "name": "final_message",
+              "value": "={{ $json.content.parts[0].text }}",
+              "type": "string"
+            }
+          ]
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.set",
+      "typeVersion": 3.4,
+      "position": [
+        336,
+        -448
+      ],
+      "id": "2985dc46-89b7-41d5-9b66-e5d21ee539be",
+      "name": "final_message_audio"
+    },
+    {
+      "parameters": {
+        "resource": "audio",
+        "modelId": {
+          "__rl": true,
+          "value": "models/gemini-2.5-pro",
+          "mode": "list",
+          "cachedResultName": "models/gemini-2.5-pro"
+        },
+        "inputType": "binary",
+        "options": {}
+      },
+      "type": "@n8n/n8n-nodes-langchain.googleGemini",
+      "typeVersion": 1,
+      "position": [
+        112,
+        -448
+      ],
+      "id": "457ad943-dad4-47de-933d-5df76aa7066e",
+      "name": "Transcribir_audio",
+      "credentials": {
+        "googlePalmApi": {
+          "id": "V50ALFehl4xoaSoO",
+          "name": "Google Gemini(PaLM) Api account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "operation": "toBinary",
+        "sourceProperty": "audio.base64",
+        "options": {
+          "mimeType": "audio/ogg"
+        }
+      },
+      "type": "n8n-nodes-base.convertToFile",
+      "typeVersion": 1.1,
+      "position": [
+        -112,
+        -448
+      ],
+      "id": "a6d3e62b-19d3-4aaf-8711-d1cff367b1d5",
+      "name": "Convertir_base_64"
+    },
+    {
+      "parameters": {
+        "assignments": {
+          "assignments": [
+            {
+              "id": "74c13791-290c-4f1b-8688-4586346ebfd4",
+              "name": "instance",
+              "value": "={{ $json.body.instance }}",
+              "type": "string"
+            },
+            {
+              "id": "3892e692-bd4e-411a-b24d-b4a35d51bf14",
+              "name": "messageType",
+              "value": "={{ $json.body.data.messageType }}",
+              "type": "string"
+            },
+            {
+              "id": "ca204ebd-6ca0-420c-a686-ad0e882ba8db",
+              "name": "audio.base64",
+              "value": "={{ $json.body.data.message.base64 }}",
+              "type": "string"
+            },
+            {
+              "id": "407e4ffb-a90d-4167-88aa-66e07c9a036c",
+              "name": "message.conversation",
+              "value": "={{ $json.body.data.message.conversation }}",
+              "type": "string"
+            },
+            {
+              "id": "1e29acc3-5f43-46a6-892b-1057876f5771",
+              "name": "sender",
+              "value": "={{ $json.body.data.key.remoteJid }}",
+              "type": "string"
+            }
+          ]
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.set",
+      "typeVersion": 3.4,
+      "position": [
+        -560,
+        -544
+      ],
+      "id": "a60f45b4-f734-4f1a-88f9-1dda96db920a",
+      "name": "Seleccionar_campos"
+    },
+    {
+      "parameters": {
+        "conditions": {
+          "options": {
+            "caseSensitive": true,
+            "leftValue": "",
+            "typeValidation": "strict",
+            "version": 2
+          },
+          "conditions": [
+            {
+              "id": "da6b449e-4c63-41d8-913b-2a5af37f71ac",
+              "leftValue": "={{ $json.messageType }}",
+              "rightValue": "conversation",
+              "operator": {
+                "type": "string",
+                "operation": "equals",
+                "name": "filter.operator.equals"
+              }
+            }
+          ],
+          "combinator": "and"
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.if",
+      "typeVersion": 2.2,
+      "position": [
+        -336,
+        -544
+      ],
+      "id": "7c759953-6c94-4e0d-b93f-d9c04cf85bf0",
+      "name": "si_es_texto"
+    },
+    {
+      "parameters": {
+        "descriptionType": "manual",
+        "toolDescription": "Utiliza esta herramienta cuando el usuario quiera agregar un gasto.",
+        "operation": "append",
+        "documentId": {
+          "__rl": true,
+          "value": "1aLJ7JQjxe9FcbCHp-tP6NpMYRP29h8ruEoCb3rZzjeU",
+          "mode": "list",
+          "cachedResultName": "finanzas",
+          "cachedResultUrl": "https://docs.google.com/spreadsheets/d/1aLJ7JQjxe9FcbCHp-tP6NpMYRP29h8ruEoCb3rZzjeU/edit?usp=drivesdk"
+        },
+        "sheetName": {
+          "__rl": true,
+          "value": "gid=0",
+          "mode": "list",
+          "cachedResultName": "Hoja 1",
+          "cachedResultUrl": "https://docs.google.com/spreadsheets/d/1aLJ7JQjxe9FcbCHp-tP6NpMYRP29h8ruEoCb3rZzjeU/edit#gid=0"
+        },
+        "columns": {
+          "mappingMode": "defineBelow",
+          "value": {
+            "FECHA": "={{ $now.format('yyyy-MM-dd') }}",
+            "DESCRIPCIÓN": "={{ /*n8n-auto-generated-fromAI-override*/ $fromAI('DESCRIPCI_N', `La descripción o el concepto del gasto. Por ejemplo: 'café', 'almuerzo', 'factura de luz'.`, 'string') }}",
+            "MONTO": "={{ /*n8n-auto-generated-fromAI-override*/ $fromAI('MONTO', `El valor numérico del gasto. Debe ser un número, sin símbolos.`, 'string') }}",
+            "TIPO": "GASTO"
+          },
+          "matchingColumns": [
+            "GASTOS"
+          ],
+          "schema": [
+            {
+              "id": "FECHA",
+              "displayName": "FECHA",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true
+            },
+            {
+              "id": "DESCRIPCIÓN",
+              "displayName": "DESCRIPCIÓN",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true,
+              "removed": false
+            },
+            {
+              "id": "MONTO",
+              "displayName": "MONTO",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true,
+              "removed": false
+            },
+            {
+              "id": "TIPO",
+              "displayName": "TIPO",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true,
+              "removed": false
+            }
+          ],
+          "attemptToConvertTypes": false,
+          "convertFieldsToString": false
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.googleSheetsTool",
+      "typeVersion": 4.6,
+      "position": [
+        1040,
+        -320
+      ],
+      "id": "459ffcd6-e18c-4604-8827-1db2615de005",
+      "name": "agregar_gasto",
+      "credentials": {
+        "googleSheetsOAuth2Api": {
+          "id": "knil3qAqAbQ3LPI5",
+          "name": "Google Sheets account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "descriptionType": "manual",
+        "toolDescription": "Utiliza esta herramienta cuando el usuario quiera agregar un ingreso.",
+        "operation": "append",
+        "documentId": {
+          "__rl": true,
+          "value": "1aLJ7JQjxe9FcbCHp-tP6NpMYRP29h8ruEoCb3rZzjeU",
+          "mode": "list",
+          "cachedResultName": "finanzas",
+          "cachedResultUrl": "https://docs.google.com/spreadsheets/d/1aLJ7JQjxe9FcbCHp-tP6NpMYRP29h8ruEoCb3rZzjeU/edit?usp=drivesdk"
+        },
+        "sheetName": {
+          "__rl": true,
+          "value": "gid=0",
+          "mode": "list",
+          "cachedResultName": "Hoja 1",
+          "cachedResultUrl": "https://docs.google.com/spreadsheets/d/1aLJ7JQjxe9FcbCHp-tP6NpMYRP29h8ruEoCb3rZzjeU/edit#gid=0"
+        },
+        "columns": {
+          "mappingMode": "defineBelow",
+          "value": {
+            "FECHA": "={{ $now.format('yyyy-MM-dd') }}",
+            "DESCRIPCIÓN": "={{ /*n8n-auto-generated-fromAI-override*/ $fromAI('DESCRIPCI_N', `La descripción o el concepto del ingreso. Por ejemplo: 'cliente', 'pasivo', etc. `, 'string') }}",
+            "MONTO": "={{ /*n8n-auto-generated-fromAI-override*/ $fromAI('MONTO', `El valor numérico del ingreso. Debe ser un número, sin símbolos.`, 'string') }}",
+            "TIPO": "INGRESO"
+          },
+          "matchingColumns": [
+            "GASTOS"
+          ],
+          "schema": [
+            {
+              "id": "FECHA",
+              "displayName": "FECHA",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true
+            },
+            {
+              "id": "DESCRIPCIÓN",
+              "displayName": "DESCRIPCIÓN",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true,
+              "removed": false
+            },
+            {
+              "id": "MONTO",
+              "displayName": "MONTO",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true,
+              "removed": false
+            },
+            {
+              "id": "TIPO",
+              "displayName": "TIPO",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true,
+              "removed": false
+            }
+          ],
+          "attemptToConvertTypes": false,
+          "convertFieldsToString": false
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.googleSheetsTool",
+      "typeVersion": 4.6,
+      "position": [
+        1168,
+        -320
+      ],
+      "id": "726ee2de-9c2a-439f-b08d-be3adfe9ee08",
+      "name": "agregar_ingreso",
+      "credentials": {
+        "googleSheetsOAuth2Api": {
+          "id": "knil3qAqAbQ3LPI5",
+          "name": "Google Sheets account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "descriptionType": "manual",
+        "toolDescription": "Usa esta herramienta para obtener los totales si el usuario los solicita",
+        "documentId": {
+          "__rl": true,
+          "value": "1aLJ7JQjxe9FcbCHp-tP6NpMYRP29h8ruEoCb3rZzjeU",
+          "mode": "list",
+          "cachedResultName": "finanzas",
+          "cachedResultUrl": "https://docs.google.com/spreadsheets/d/1aLJ7JQjxe9FcbCHp-tP6NpMYRP29h8ruEoCb3rZzjeU/edit?usp=drivesdk"
+        },
+        "sheetName": {
+          "__rl": true,
+          "value": 1123440227,
+          "mode": "list",
+          "cachedResultName": "RESUMEN",
+          "cachedResultUrl": "https://docs.google.com/spreadsheets/d/1aLJ7JQjxe9FcbCHp-tP6NpMYRP29h8ruEoCb3rZzjeU/edit#gid=1123440227"
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.googleSheetsTool",
+      "typeVersion": 4.6,
+      "position": [
+        1296,
+        -320
+      ],
+      "id": "f5064545-f6ea-44b5-b46c-b20c2a4e2f0d",
+      "name": "consultar_totales",
+      "credentials": {
+        "googleSheetsOAuth2Api": {
+          "id": "knil3qAqAbQ3LPI5",
+          "name": "Google Sheets account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "descriptionType": "manual",
+        "toolDescription": "Utiliza esta herramienta para buscar y consultar gastos o ingresos registrados en la hoja de cálculo. La herramienta es muy flexible y te permite **combinar múltiples filtros** para realizar búsquedas precisas.\n\nPuedes filtrar por:\n- **Descripción específica:** como 'café', 'supermercado' o 'alquiler'.\n- **Período de tiempo:** como 'hoy', 'ayer', 'esta semana' o 'junio 2024'.\n\nEjemplo de uso combinado: Si el usuario pide \"gastos en café de esta semana\", la herramienta buscará los registros que cumplan **AMBAS** condiciones.",
+        "documentId": {
+          "__rl": true,
+          "value": "1aLJ7JQjxe9FcbCHp-tP6NpMYRP29h8ruEoCb3rZzjeU",
+          "mode": "list",
+          "cachedResultName": "finanzas",
+          "cachedResultUrl": "https://docs.google.com/spreadsheets/d/1aLJ7JQjxe9FcbCHp-tP6NpMYRP29h8ruEoCb3rZzjeU/edit?usp=drivesdk"
+        },
+        "sheetName": {
+          "__rl": true,
+          "value": "gid=0",
+          "mode": "list",
+          "cachedResultName": "Hoja 1",
+          "cachedResultUrl": "https://docs.google.com/spreadsheets/d/1aLJ7JQjxe9FcbCHp-tP6NpMYRP29h8ruEoCb3rZzjeU/edit#gid=0"
+        },
+        "filtersUI": {
+          "values": [
+            {
+              "lookupColumn": "FECHA",
+              "lookupValue": "={{ /*n8n-auto-generated-fromAI-override*/ $fromAI('values0_Value', `El concepto o ítem específico del gasto o ingreso que el usuario quiere consultar. Utiliza el texto exacto que menciona el usuario. Por ejemplo, si pregunta por 'café', utiliza 'café'. Si pregunta por 'supermercado', utiliza 'supermercado'. Si el usuario no menciona un concepto, deja este campo vacío.s\", etc.`, 'string') }}"
+            },
+            {
+              "lookupColumn": "DESCRIPCIÓN",
+              "lookupValue": "={{ `=` + $json.descripcion }}"
+            },
+            {
+              "lookupColumn": "TIPO",
+              "lookupValue": "={{ /*n8n-auto-generated-fromAI-override*/ $fromAI('values2_Value', `Puede ser \"INGRESO\" O \"GASTO\", dependiendo lo que pida el usuario`, 'string') }}"
+            }
+          ]
+        },
+        "combineFilters": "OR",
+        "options": {}
+      },
+      "type": "n8n-nodes-base.googleSheetsTool",
+      "typeVersion": 4.6,
+      "position": [
+        1424,
+        -320
+      ],
+      "id": "3093fcbc-4fbc-4da1-a771-7738dc06cfa9",
+      "name": "consultar_movimientos",
+      "credentials": {
+        "googleSheetsOAuth2Api": {
+          "id": "knil3qAqAbQ3LPI5",
+          "name": "Google Sheets account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "method": "POST",
+        "url": "=http://api:8080/message/sendText/{{ $('si_es_texto').item.json.instance }}",
+        "authentication": "genericCredentialType",
+        "genericAuthType": "httpHeaderAuth",
+        "sendBody": true,
+        "bodyParameters": {
+          "parameters": [
+            {
+              "name": "number",
+              "value": "={{ $('si_es_texto').item.json.sender }}"
+            },
+            {
+              "name": "=text",
+              "value": "={{ $json.respuesta_final }}"
+            }
+          ]
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.2,
+      "position": [
+        1856,
+        -544
+      ],
+      "id": "ad1fb777-6e14-41ee-86de-f68bce9c3b03",
+      "name": "HTTP Request",
+      "credentials": {
+        "httpHeaderAuth": {
+          "id": "hQgc2HIIKHwEvev2",
+          "name": "Header Auth account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "jsCode": "// Obtiene el item de entrada desde el nodo anterior.\nconst item = $input.item;\n\n// Busca los resultados de la herramienta en la entrada.\n// Esta ruta es la más común, pero verifica la salida de tu AI Agent si no funciona.\nconst movimientos = item.json.tool_outputs?.[0]?.output;\nconst query = item.json.input; // El texto original del usuario, ej: \"gastos de este mes\"\n\n// -----------------------------------------------------------------\n// ESCENARIO 1: No se encontraron movimientos para formatear.\n// La IA probablemente dio una respuesta directa. La pasamos tal cual.\n// -----------------------------------------------------------------\nif (!Array.isArray(movimientos) || movimientos.length === 0) {\n  // Si no hay datos, pasamos la respuesta de texto que generó la IA.\n  item.json.respuesta_final = item.json.output || \"No encontré movimientos para tu consulta.\";\n  return item;\n}\n\n// -----------------------------------------------------------------\n// ESCENARIO 2: Hay movimientos. Vamos a narrarlos y sumarlos.\n// -----------------------------------------------------------------\n\nlet textoRespuesta = `¡Dale! Aquí tienes el resumen de ${query}:\\n\\n`;\nlet total = 0;\n\n// Opciones de formato de moneda (español de Argentina, sin decimales)\nconst opcionesDeFormato = {\n  style: 'currency',\n  currency: 'ARS',\n  minimumFractionDigits: 0,\n  maximumFractionDigits: 0,\n};\nconst formateadorDeMoneda = new Intl.NumberFormat('es-AR', opcionesDeFormato);\n\n\n// Recorre cada movimiento para construir el detalle\nfor (const movimiento of movimientos) {\n  // Extraer y limpiar los datos de cada fila\n  const fecha = movimiento.FECHA || 'N/A';\n  const descripcion = movimiento.DESCRIPCION || 'Sin descripción';\n  const monto = parseFloat(movimiento.MONTO) || 0;\n  \n  // Formatear el monto individual\n  const montoFormateado = formateadorDeMoneda.format(monto);\n  \n  // Añadir la línea formateada a la respuesta\n  textoRespuesta += `• El día ${fecha}, un movimiento de ${montoFormateado} por \"${descripcion}\".\\n`;\n  \n  // Sumar al total\n  total += monto;\n}\n\n// Formatear el monto total\nconst totalFormateado = formateadorDeMoneda.format(total);\n\n// Añadir la línea del total al final, con negritas\ntextoRespuesta += `\\nEl total es de $`+`${totalFormateado}.`;\ntextoRespuesta += `\\n\\n¿Hay algo más en lo que te pueda dar una mano?`;\n\n\n// Guardar la respuesta final en el item para que el siguiente nodo la use\nitem.json.respuesta_final = textoRespuesta;\n\n// Devolver el item modificado para que continúe el flujo\nreturn item;"
+      },
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        1632,
+        -544
+      ],
+      "id": "04efd408-866f-4760-a8ef-6507d2fdb392",
+      "name": "Code"
+    },
+    {
+      "parameters": {
+        "assignments": {
+          "assignments": [
+            {
+              "id": "a394a593-34b1-43ad-b18e-48b8564dda55",
+              "name": "input",
+              "value": "={{ $json.final_message }}",
+              "type": "string"
+            }
+          ]
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.set",
+      "typeVersion": 3.4,
+      "position": [
+        560,
+        -544
+      ],
+      "id": "1e4cbb7a-9c45-4d70-bc21-f0a5f12e5c25",
+      "name": "Preparar Input para IA"
+    }
+  ],
+  "pinData": {},
+  "connections": {
+    "Webhook": {
+      "main": [
+        [
+          {
+            "node": "Seleccionar_campos",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Google Gemini Chat Model": {
+      "ai_languageModel": [
+        [
+          {
+            "node": "AI Agent",
+            "type": "ai_languageModel",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Postgres Chat Memory": {
+      "ai_memory": [
+        [
+          {
+            "node": "AI Agent",
+            "type": "ai_memory",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Transcribir_audio": {
+      "main": [
+        [
+          {
+            "node": "final_message_audio",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Convertir_base_64": {
+      "main": [
+        [
+          {
+            "node": "Transcribir_audio",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Seleccionar_campos": {
+      "main": [
+        [
+          {
+            "node": "si_es_texto",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "si_es_texto": {
+      "main": [
+        [
+          {
+            "node": "final_message_txt",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "Convertir_base_64",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "final_message_txt": {
+      "main": [
+        [
+          {
+            "node": "Preparar Input para IA",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "final_message_audio": {
+      "main": [
+        [
+          {
+            "node": "Preparar Input para IA",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "agregar_gasto": {
+      "ai_tool": [
+        [
+          {
+            "node": "AI Agent",
+            "type": "ai_tool",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "agregar_ingreso": {
+      "ai_tool": [
+        [
+          {
+            "node": "AI Agent",
+            "type": "ai_tool",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "consultar_totales": {
+      "ai_tool": [
+        [
+          {
+            "node": "AI Agent",
+            "type": "ai_tool",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "consultar_movimientos": {
+      "ai_tool": [
+        [
+          {
+            "node": "AI Agent",
+            "type": "ai_tool",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "AI Agent": {
+      "main": [
+        [
+          {
+            "node": "Code",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Code": {
+      "main": [
+        [
+          {
+            "node": "HTTP Request",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Preparar Input para IA": {
+      "main": [
+        [
+          {
+            "node": "AI Agent",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    }
+  },
+  "active": false,
+  "settings": {
+    "executionOrder": "v1"
+  },
+  "versionId": "e1328f5a-4c04-4bd9-9577-cff5d844b045",
+  "meta": {
+    "templateCredsSetupCompleted": true,
+    "instanceId": "c26bdea05d43dbc2ab07b143a3382d20d5a1b590e09f9da3ddf4c282b65eaf41"
+  },
+  "id": "oaov6TnlMFqrUJXW",
+  "tags": [
+    {
+      "name": "chats",
+      "id": "mDf6nil5Lg36fBqb",
+      "createdAt": "2025-08-05T22:40:18.934Z",
+      "updatedAt": "2025-08-05T22:40:18.934Z"
+    }
+  ]
+}
