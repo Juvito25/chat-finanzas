@@ -1,120 +1,91 @@
-<h1 align="center">Evolution Api</h1>
 
-<div align="center">
+# Asistente Financiero Inteligente para WhatsApp
 
-[![Docker Image	(https://img.shields.io/badge/Docker-Image-blue)](https://hub.docker.com/r/evoapicloud/evolution-api)]
-[![Whatsapp Group](https://img.shields.io/badge/Group-WhatsApp-%2322BC18)](https://evolution-api.com/whatsapp)
-[![Discord Community](https://img.shields.io/badge/Discord-Community-blue)](https://evolution-api.com/discord)
-[![Postman Collection](https://img.shields.io/badge/Postman-Collection-orange)](https://evolution-api.com/postman) 
-[![Documentation](https://img.shields.io/badge/Documentation-Official-green)](https://doc.evolution-api.com)
-[![License](https://img.shields.io/badge/license-Apache--2.0-blue)](./LICENSE)
-[![Support](https://img.shields.io/badge/Donation-picpay-green)](https://app.picpay.com/user/davidsongomes1998)
-[![Sponsors](https://img.shields.io/badge/Github-sponsor-orange)](https://github.com/sponsors/EvolutionAPI)
+Este proyecto es un chatbot para WhatsApp diseñado para actuar como un asistente financiero personal. Utilizando el poder de un modelo de lenguaje de IA (Google Gemini), el bot puede entender mensajes en lenguaje natural, tanto de texto como de voz, para registrar ingresos, gastos y consultar información financiera almacenada en una hoja de cálculo de Google Sheets.
 
-</div>
-  
-<div align="center"><img src="./public/images/cover.png"></div>
+El flujo de trabajo está construido sobre una plataforma de automatización visual (como n8n) y está diseñado para funcionar exclusivamente en chats privados, ignorando cualquier mensaje proveniente de grupos de WhatsApp.
 
-## Evolution API
+## ✨ Características Principales
 
-Evolution API began as a WhatsApp controller API based on [CodeChat](https://github.com/code-chat-br/whatsapp-api), which in turn implemented the [Baileys](https://github.com/WhiskeySockets/Baileys) library. While originally focused on WhatsApp, Evolution API has grown into a comprehensive platform supporting multiple messaging services and integrations. We continue to acknowledge CodeChat for laying the groundwork.
+- **Registro de Gastos:** Añade nuevos gastos simplemente enviando un mensaje. Ej: _"Anota un gasto de 15€ en café"_.
+- **Registro de Ingresos:** Registra tus ingresos de la misma forma. Ej: _"Recibí 1500€ de mi salario"_.
+- **Consulta de Saldos y Totales:** Pregunta por tus finanzas. Ej: _"¿Cuánto he gastado este mes?"_ o _"Muéstrame los totales"_.
+- **Consulta de Movimientos:** Obtén un resumen de tus últimas transacciones. Ej: _"¿Cuáles son mis últimos 5 movimientos?"_.
+- **Procesamiento de Mensajes de Voz:** Envía una nota de voz en lugar de escribir. El audio es transcrito y procesado por la IA.
+- **Memoria Conversacional:** El bot recuerda el contexto de la conversación gracias a una base de datos PostgreSQL, permitiendo un diálogo más fluido.
+- **Privacidad por Diseño:** El bot está diseñado para **ignorar automáticamente** todos los mensajes de grupos y solo responder en chats individuales.
 
-Today, Evolution API is not limited to WhatsApp. It integrates with various platforms such as Typebot, Chatwoot, Dify, and OpenAI, offering a broad array of functionalities beyond messaging. Evolution API supports both the Baileys-based WhatsApp API and the official WhatsApp Business API, with upcoming support for Instagram and Messenger.
+## ⚙️ ¿Cómo Funciona? (Arquitectura del Flujo)
 
-## Looking for a Lightweight Version?
-For those who need a more streamlined and performance-optimized version, check out [Evolution API Lite](https://github.com/EvolutionAPI/evolution-api-lite). It's designed specifically for microservices, focusing solely on connectivity without integrations or audio conversion features. Ideal for environments that prioritize simplicity and efficiency.
+![Diagrama del Flujo de Trabajo del Asistente Financiero](img/flujo.png)
 
-## Types of Connections
+El flujo de trabajo sigue una secuencia lógica para procesar cada mensaje recibido:
 
-Evolution API supports multiple types of connections to WhatsApp, enabling flexible and powerful integration options:
+1.  **Recepción del Mensaje (`Webhook`):** El flujo se activa cuando un nuevo mensaje de WhatsApp llega a través de un webhook.
 
-- *WhatsApp API - Baileys*:
-  - A free API based on WhatsApp Web, leveraging the [Baileys library](https://github.com/WhiskeySockets/Baileys).
-  - This connection type allows control over WhatsApp Web functionalities through a RESTful API, suitable for multi-service chats, service bots, and other WhatsApp-integrated systems.
-  - Note: This method relies on the web version of WhatsApp and may have limitations compared to official APIs.
+2.  **Filtro de Chat Individual (`¿chat_individual?`):** **(Paso Clave de Privacidad)** El flujo verifica inmediatamente si el mensaje proviene de un chat individual. Si la condición no se cumple (es decir, es un chat de grupo), la automatización se detiene. Esto asegura que el bot solo opere en conversaciones privadas.
 
-- *WhatsApp Cloud API*:
-  - The official API provided by Meta (formerly Facebook).
-  - This connection type offers a robust and reliable solution designed for businesses needing higher volumes of messaging and better integration support.
-  - The Cloud API supports features such as end-to-end encryption, advanced analytics, and more comprehensive customer service tools.
-  - To use this API, you must comply with Meta's policies and potentially pay for usage based on message volume and other factors.
+3.  **Selección y Procesamiento de Entrada (`Seleccionar_campos` y `si_es_texto`):**
+    - **Si es Texto:** El mensaje de texto pasa directamente a la siguiente etapa.
+    - **Si es Audio:** El mensaje de audio (recibido en formato base64) se convierte a un archivo (`Convertir_base_64`) y luego se envía a un servicio de transcripción (`Transcribir_audio`) para convertir la voz en texto.
 
-## Integrations
+4.  **Preparación del Input para la IA (`Preparar Input para IA`):** El texto (ya sea el original o el transcrito) se unifica y se formatea para ser procesado por el agente de IA.
 
-Evolution API supports various integrations to enhance its functionality. Below is a list of available integrations and their uses:
+5.  **Orquestación con el Agente de IA (`AI Agent`):** Este es el cerebro del bot. El `AI Agent` utiliza varios componentes para entender y actuar:
+    - **Modelo:** `Google Gemini Chat Model` se encarga de entender la intención del usuario.
+    - **Memoria:** `Postgres Chat Memory` le da al bot un historial de la conversación para mantener el contexto.
+    - **Herramientas (Tools):** Son las acciones que la IA puede decidir ejecutar, interactuando con una hoja de Google Sheets:
+        - `agregar_gasto`
+        - `agregar_ingreso`
+        - `consultar_totales`
+        - `consultar_movimientos`
 
-- [Typebot](https://typebot.io/):
-  - Build conversational bots using Typebot, integrated directly into Evolution with trigger management.
+6.  **Ejecución y Respuesta (`Code` & `HTTP Request`):** Una vez que la IA ha decidido qué hacer, el resultado final se prepara y se envía de vuelta al usuario en WhatsApp a través de una solicitud HTTP a la API correspondiente.
 
-- [Chatwoot](https://www.chatwoot.com/):
-  - Direct integration with Chatwoot for handling customer service for your business.
+## 🛠️ Stack Tecnológico
 
-- [RabbitMQ](https://www.rabbitmq.com/):
-  - Receive events from the Evolution API via RabbitMQ.
+- **Plataforma de Automatización:** [n8n.io](https://n8n.io/) (o similar)
+- **Plataforma de Mensajería:** API de WhatsApp Business (Meta Cloud)
+- **Modelo de IA:** Google Gemini
+- **Transcripción de Audio:** Servicio de Speech-to-Text
+- **Base de Datos (Memoria):** PostgreSQL
+- **Almacenamiento de Datos:** Google Sheets
 
-- [Amazon SQS](https://aws.amazon.com/pt/sqs/):
-  - Receive events from the Evolution API via Amazon SQS.
+## 🚀 Puesta en Marcha
 
-- [Socket.io](https://socket.io/):
-  - Receive events from the Evolution API via WebSocket.
+Para replicar este proyecto, necesitarás:
 
-- [Dify](https://dify.ai/):
-  - Integrate your Evolution API directly with Dify AI for seamless trigger management and multiple agents.
+1.  **Prerrequisitos:**
+    - Una cuenta en una plataforma de automatización como n8n.
+    - Acceso a las APIs de Google (Gemini, Sheets, Speech-to-Text).
+    - Una cuenta de Meta for Developers con una App de WhatsApp configurada.
+    - Una base de datos PostgreSQL accesible.
+    - Una hoja de cálculo de Google Sheets con las columnas adecuadas.
 
-- [OpenAI](https://openai.com/):
-  - Integrate your Evolution API with OpenAI for AI capabilities, including audio-to-text conversion, available across all Evolution integrations.
+2.  **Configuración:**
+    - Importa el flujo de trabajo en tu instancia de n8n.
+    - Configura las credenciales para cada servicio.
+    - Copia la URL del `Webhook` y configúrala en tu App de WhatsApp en Meta.
+    - Asegúrate de que las herramientas del `AI Agent` apunten a tu Google Sheet.
+    - Activa el flujo de trabajo.
 
-- Amazon S3 / Minio:
-  - Store media files received in [Amazon S3](https://aws.amazon.com/pt/s3/) or [Minio](https://min.io/).
+## 💬 Ejemplos de Uso
 
-## Telemetry Notice
+- **Tú:** "Agrega una compra de supermercado por 85.50"
+- **Bot:** "¡Entendido! He registrado un gasto de 85.50 en 'supermercado'."
 
-To continuously improve our services, we have implemented telemetry that collects data on the routes used, the most accessed routes, and the version of the API in use. We would like to assure you that no sensitive or personal data is collected during this process. The telemetry helps us identify improvements and provide a better experience for users.
+- **Tú:** (Enviando nota de voz) "Añade un ingreso de 200 por un trabajo freelance"
+- **Bot:** "¡Perfecto! Ingreso de 200 por 'trabajo freelance' registrado."
 
-## Evolution Support Premium
+- **Tú:** "¿Cuál es mi total de gastos de este mes?"
+- **Bot:** "Hasta ahora, has gastado un total de 432.75 este mes."
 
-Join our Evolution Pro community for expert support and a weekly call to answer questions. Visit the link below to learn more and subscribe:
+## 🤝 Contribuciones
 
-[Click here to learn more](https://evolution-api.com/suporte-pro)
+Las contribuciones son bienvenidas. Si tienes ideas para mejorar el bot, no dudes en abrir un *issue* o enviar un *pull request*.
 
-# Donate to the project.
+## 📄 Licencia
 
-#### Github Sponsors
+Este proyecto se distribuye bajo la licencia MIT. Consulta el archivo `LICENSE` para más detalles.
 
-https://github.com/sponsors/EvolutionAPI
-
-# Content Creator Partners
-
-We are proud to collaborate with the following content creators who have contributed valuable insights and tutorials about Evolution API:
-
-- [Promovaweb](https://www.youtube.com/@promovaweb)
-- [Sandeco](https://www.youtube.com/@canalsandeco)
-- [Comunidade ZDG](https://www.youtube.com/@ComunidadeZDG)
-- [Francis MNO](https://www.youtube.com/@FrancisMNO)
-- [Pablo Cabral](https://youtube.com/@pablocabral)
-- [XPop Digital](https://www.youtube.com/@xpopdigital)
-- [Costar Wagner Dev](https://www.youtube.com/@costarwagnerdev)
-- [Dante Testa](https://youtube.com/@dantetesta_)
-- [Rubén Salazar](https://youtube.com/channel/UCnYGZIE2riiLqaN9sI6riig)
-- [OrionDesign](youtube.com/OrionDesign_Oficial)
-- [IMPA 365](youtube.com/@impa365_ofc)
-- [Comunidade Hub Connect](https://youtube.com/@comunidadehubconnect)
-- [dSantana Automações](https://www.youtube.com/channel/UCG7DjUmAxtYyURlOGAIryNQ?view_as=subscriber)
-- [Edison Martins](https://www.youtube.com/@edisonmartinsmkt)
-- [Astra Online](https://www.youtube.com/@astraonlineweb)
-- [MKT Seven Automações](https://www.youtube.com/@sevenautomacoes)
-- [Vamos automatizar](https://www.youtube.com/vamosautomatizar)
-
-## License
-
-Evolution API is licensed under the Apache License 2.0, with the following additional conditions:
-
-1. **LOGO and copyright information**: In the process of using Evolution API's frontend components, you may not remove or modify the LOGO or copyright information in the Evolution API console or applications. This restriction is inapplicable to uses of Evolution API that do not involve its frontend components.
-
-2. **Usage Notification Requirement**: If Evolution API is used as part of any project, including closed-source systems (e.g., proprietary software), the user is required to display a clear notification within the system that Evolution API is being utilized. This notification should be visible to system administrators and accessible from the system's documentation or settings page. Failure to comply with this requirement may result in the necessity for a commercial license, as determined by the producer.
-
-Please contact contato@evolution-api.com to inquire about licensing matters.
-
-Apart from the specific conditions mentioned above, all other rights and restrictions follow the Apache License 2.0. Detailed information about the Apache License 2.0 can be found at [http://www.apache.org/licenses/LICENSE-2.0](http://www.apache.org/licenses/LICENSE-2.0).
-
-© 2025 Evolution API
+```
