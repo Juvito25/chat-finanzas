@@ -7,8 +7,8 @@ El flujo de trabajo está construido sobre una plataforma de automatización vis
 
 ## ✨ Características Principales
 
-- **Registro de Gastos:** Añade nuevos gastos simplemente enviando un mensaje. Ej: _"Anota un gasto de 15€ en café"_.
-- **Registro de Ingresos:** Registra tus ingresos de la misma forma. Ej: _"Recibí 1500€ de mi salario"_.
+- **Registro de Gastos:** Añade nuevos gastos simplemente enviando un mensaje. Ej: _"Anota un gasto de $15 en café"_.
+- **Registro de Ingresos:** Registra tus ingresos de la misma forma. Ej: _"Recibí $1500 de mi salario"_.
 - **Consulta de Saldos y Totales:** Pregunta por tus finanzas. Ej: _"¿Cuánto he gastado este mes?"_ o _"Muéstrame los totales"_.
 - **Consulta de Movimientos:** Obtén un resumen de tus últimas transacciones. Ej: _"¿Cuáles son mis últimos 5 movimientos?"_.
 - **Procesamiento de Mensajes de Voz:** Envía una nota de voz en lugar de escribir. El audio es transcrito y procesado por la IA.
@@ -44,10 +44,10 @@ El flujo de trabajo sigue una secuencia lógica para procesar cada mensaje recib
 
 ## 🛠️ Stack Tecnológico
 
-- **Plataforma de Automatización:** [n8n.io](https://n8n.io/) (o similar)
-- **Plataforma de Mensajería:** API de WhatsApp Business (Meta Cloud)
+- **Plataforma de Automatización:** [n8n.io](https://n8n.io/)
+- **Plataforma de Mensajería:** [Evolution API](https://doc.evolution-api.com/v1/en/get-started/introduction)
 - **Modelo de IA:** Google Gemini
-- **Transcripción de Audio:** Servicio de Speech-to-Text
+- **Transcripción de Audio:** Google Gemini 
 - **Base de Datos (Memoria):** PostgreSQL
 - **Almacenamiento de Datos:** Google Sheets
 
@@ -57,8 +57,8 @@ Para replicar este proyecto, necesitarás:
 
 1.  **Prerrequisitos:**
     - Una cuenta en una plataforma de automatización como n8n.
-    - Acceso a las APIs de Google (Gemini, Sheets, Speech-to-Text).
-    - Una cuenta de Meta for Developers con una App de WhatsApp configurada.
+    - Acceso a las APIs de Google (Gemini, Sheets).
+    - Una cuenta de EVOLUTION API.
     - Una base de datos PostgreSQL accesible.
     - Una hoja de cálculo de Google Sheets con las columnas adecuadas.
 
